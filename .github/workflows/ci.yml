@@ -19,6 +19,11 @@ jobs:
       - name: Install Zsh on Linux
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y zsh
+      - name: Secure completion directories on the Linux runner
+        if: runner.os == 'Linux'
+        # Hosted images make these directories writable by non-owner users.
+        # Fix this disposable runner instead of bypassing compinit's audit.
+        run: sudo chmod go-w /usr/share/zsh /usr/share/zsh/vendor-completions
       - name: Check Zsh syntax
         shell: bash
         run: |

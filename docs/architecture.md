@@ -30,4 +30,6 @@ Tab 的路径和参数补全全部由 Zsh completion system 提供；本项目�
 
 测试分为三个层次：纯匹配与生命周期测试、临时配置文件安装器测试、真实 Zsh PTY 集成测试。PTY 通过独立测试 widget 读取实际 `BUFFER`、`CURSOR` 和 `POSTDISPLAY`，验证接受建议只改变输入行；通过屏幕转义序列验证灰色提示，通过文件系统检查候选命令未被执行。
 
+测试仅加载 `/usr/share/zsh` 下的系统补全目录，并等待真正的 prompt，避免把启动命令的回显误认为 Shell 已就绪。Linux CI 镜像中的 `/usr/share/zsh` 和 `vendor-completions` 存在过宽写权限，workflow 在临时 runner 中先移除组写入和其他用户写入权限，再运行 `compaudit`；插件本身不修改系统目录或跳过权限检查。
+
 参考：[ZLE 文档](https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html)、[Completion System](https://zsh.sourceforge.io/Doc/Release/Completion-System.html)、[add-zle-hook-widget](https://zsh.sourceforge.io/Doc/Release/User-Contributions.html#Manipulating-Hook-Functions)。
