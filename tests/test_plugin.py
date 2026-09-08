@@ -112,8 +112,12 @@ class Terminal:
         os.close(slave)
         self.read(0.3)
         self.send(
-            "PROMPT='TC> '; RPROMPT=''; HISTSIZE=1000; SAVEHIST=0; "
+            # Split the literal so echoed setup input cannot look like a ready prompt.
+            "PROMPT='TC''> '; RPROMPT=''; HISTSIZE=1000; SAVEHIST=0; "
             "unsetopt beep; bindkey -e; "
+            # Isolate tests from third-party completion directories on CI images.
+            # Keep compinit's normal permission checks enabled.
+            "fpath=( \"${(@M)fpath:#/usr/share/zsh/*}\" ); "
             f"source {shlex.quote(str(PLUGIN))}; "
             "_test_snapshot() { print -rl -- \"$BUFFER\" \"$CURSOR\" \"$POSTDISPLAY\" "
             f"> {shlex.quote(str(self.snapshot_path))}; }}; "
