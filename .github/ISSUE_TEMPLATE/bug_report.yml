@@ -1,0 +1,31 @@
+name: Bug report / 问题反馈
+description: Report unexpected behavior in zsh-glint / 反馈异常行为
+title: "[Bug] "
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 环境
+      description: OS, Zsh version, terminal, plugin version, installation method, and other loaded plugins.
+      placeholder: macOS or Linux; zsh --version; terminal; zsh-glint status
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps and expected behavior / 复现步骤与预期行为
+      description: Use synthetic commands and remove private paths or secrets / 请使用示例命令，移除隐私路径和凭据。
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Doctor output / 自检输出
+      description: Run zsh-glint doctor in the affected session. Inspect additional logs before sharing.
+      render: text

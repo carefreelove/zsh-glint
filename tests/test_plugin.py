@@ -39,6 +39,79 @@ _tc_suggest '打印 中'; [[ $REPLY == 文内容 ]] || exit 5
 _tc_suggest 'missing'; [[ -z $REPLY ]] || exit 6
 ''')
 
+    def test_native_search_matches_reference_and_handles_long_first_match(self):
+        self.check_zsh(r'''
+_tc_history=('git status --very-long-command' 'git st' 'git status' 'echo * literal' 'echo ? literal' 'echo [x]' 'echo (x)' 'echo $literal' 'echo \\path' '中文 输入')
+TC_MAX_BUFFER=12
+_tc_suggest 'git s'; [[ $REPLY == t ]] || exit 1
+TC_MAX_BUFFER=512
+for prefix in 'git s' 'git status' 'echo *' 'echo ?' 'echo [' 'echo (' 'echo $' 'echo \\' '中文 ' 'absent' ''; do
+  expected=''
+  for entry in "${_tc_history[@]}"; do
+    if (( ${#prefix} >= 2 )) && [[ $entry == "$prefix"* && $entry != "$prefix" ]]; then
+      expected=${entry[${#prefix}+1,-1]}; break
+    fi
+  done
+  _tc_suggest "$prefix"; [[ $REPLY == "$expected" ]] || exit 2
+  _tc_suggest "$prefix"; [[ $REPLY == "$expected" ]] || exit 3
+done
+''')
+
+    def test_refresh_invalidates_cached_miss(self):
+        self.check_zsh(r'''
+fc -p
+HISTSIZE=100
+_tc_refresh_history
+_tc_suggest 'new '; [[ -z $REPLY ]] || exit 1
+print -s -- 'new command'
+print -s -- ' pending event'
+_tc_refresh_history
+_tc_suggest 'new '; [[ $REPLY == command ]] || exit 2
+fc -P
+''')
+
+    def test_doctor_does_not_expose_history_or_change_configuration(self):
+        self.check_zsh(r'''
+_tc_history=('private-secret-never-print-this')
+TC_MIN_PREFIX=bad
+before=$TC_MIN_PREFIX
+report=$(zsh-glint doctor)
+[[ $? == 1 ]] || exit 1
+[[ $report == *'WARN TC_MIN_PREFIX'* && $report == *'WARN Native completion missing'* ]] || exit 2
+[[ $report != *private-secret-never-print-this* ]] || exit 3
+[[ $TC_MIN_PREFIX == "$before" ]] || exit 4
+[[ $report == *'Result:'* ]] || exit 5
+''')
+
+    def test_reload_after_later_wrapper_is_rejected_without_recursion(self):
+        self.check_zsh(r'''
+zle -A forward-char later-saved-forward
+later_forward() { zle later-saved-forward; }
+zle -N forward-char later_forward
+zsh-glint unload
+[[ ${widgets[forward-char]} == user:later_forward ]] || exit 1
+source ./zsh-glint.plugin.zsh 2>/dev/null
+[[ $? == 1 && ! -v _TC_LOADED ]] || exit 2
+''')
+
+    def test_aliases_and_shell_options_survive_loading(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                ["zsh", "-dfi", "-c", r'''
+alias print='false'
+alias autoload='false'
+setopt ksharrays
+builtin source ./zsh-glint.plugin.zsh
+[[ -o ksharrays && -o aliases ]] || exit 1
+[[ ${aliases[print]} == false ]] || exit 2
+report=$(zsh-glint status)
+[[ $report == 'zsh-glint 0.2.0 '* ]] || exit 3
+'''], cwd=ROOT, text=True, capture_output=True, timeout=15,
+                env=dict(os.environ, ZDOTDIR=directory, TC_INIT_COMPLETION="0"),
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(result.stderr, "")
+
     def test_limits_disable_and_invalid_configuration(self):
         self.check_zsh(r'''
 _tc_history=('git status')
@@ -284,6 +357,22 @@ class InteractiveTests(unittest.TestCase):
         t.command("_other_display() { POSTDISPLAY='OTHER'; }; zle -N _other_display; bindkey '^X^O' _other_display")
         t.type(b"ab\x18\x0f")
         self.assertEqual(t.snapshot()[2], "OTHER")
+
+    def test_existing_hooks_and_custom_forward_widget_survive(self):
+        t = self.terminal
+        t.command("zsh-glint unload; _custom_forward() { zle .forward-char; }; zle -N forward-char _custom_forward; _foreign_redraw() { region_highlight+=( '0 1 bold memo=foreign' ); }; zle -N _foreign_redraw; add-zle-hook-widget line-pre-redraw _foreign_redraw")
+        t.command(f"source {shlex.quote(str(PLUGIN))}; zsh-glint on; print -s -- 'git status'")
+        t.type("git st")
+        self.assertEqual(t.snapshot()[2], "atus")
+        t.type(b"\x1b[C")
+        self.assertEqual(t.snapshot()[0], "git status")
+        t.type(b"\x15")
+        output = t.command("zsh-glint unload; print -r -- ${widgets[forward-char]}")
+        self.assertIn(b"user:_custom_forward", output)
+
+    def test_doctor_reports_healthy_session(self):
+        output = self.terminal.command("zsh-glint doctor")
+        self.assertIn(b"Result: 0 warning(s)", output)
 
 
 class InstallerTests(unittest.TestCase):

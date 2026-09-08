@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -28,7 +29,7 @@ jobs:
         shell: bash
         run: |
           zsh --version
-          for script in *.plugin.zsh scripts/*.zsh; do
+          for script in *.plugin.zsh lib/*.zsh scripts/*.zsh; do
             zsh -n "$script"
           done
       - name: Audit system completion directories
@@ -39,3 +40,7 @@ jobs:
           compaudit
       - name: Run unit and terminal integration tests
         run: python3 -m unittest discover -s tests -v
+      - name: Check documentation links and assets
+        run: python3 scripts/check_docs.py
+      - name: Exercise the benchmark workload
+        run: python3 scripts/benchmark.py --sizes 1000 --repetitions 5

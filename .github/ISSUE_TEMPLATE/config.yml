@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: User guide / 使用指南
+    url: https://github.com/carefreelove/zsh-glint/blob/main/docs/guide.md
+    about: Installation, configuration, troubleshooting, and Chinese language link.

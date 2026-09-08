@@ -1,0 +1,113 @@
+{
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "zsh": "zsh 5.9 (arm64-apple-darwin25.0)",
+  "method": "Synthetic unique commands; cold matcher caches invalidated; refresh capped at 1000 cached entries; milliseconds; no terminal rendering/startup included.",
+  "results": [
+    {
+      "entries": 1000,
+      "scenario": "first",
+      "median_ms": 0.0331,
+      "p95_ms": 0.042,
+      "samples": 30
+    },
+    {
+      "entries": 1000,
+      "scenario": "last",
+      "median_ms": 0.1731,
+      "p95_ms": 0.2191,
+      "samples": 30
+    },
+    {
+      "entries": 1000,
+      "scenario": "miss",
+      "median_ms": 0.101,
+      "p95_ms": 0.108,
+      "samples": 30
+    },
+    {
+      "entries": 1000,
+      "scenario": "repeated",
+      "median_ms": 0.023,
+      "p95_ms": 0.0269,
+      "samples": 30
+    },
+    {
+      "entries": 1000,
+      "scenario": "refresh",
+      "median_ms": 5.578,
+      "p95_ms": 5.9798,
+      "samples": 5
+    },
+    {
+      "entries": 10000,
+      "scenario": "first",
+      "median_ms": 0.0391,
+      "p95_ms": 0.047,
+      "samples": 30
+    },
+    {
+      "entries": 10000,
+      "scenario": "last",
+      "median_ms": 1.424,
+      "p95_ms": 1.5309,
+      "samples": 30
+    },
+    {
+      "entries": 10000,
+      "scenario": "miss",
+      "median_ms": 0.736,
+      "p95_ms": 0.783,
+      "samples": 30
+    },
+    {
+      "entries": 10000,
+      "scenario": "repeated",
+      "median_ms": 0.0244,
+      "p95_ms": 0.0279,
+      "samples": 30
+    },
+    {
+      "entries": 10000,
+      "scenario": "refresh",
+      "median_ms": 8.4479,
+      "p95_ms": 8.6842,
+      "samples": 5
+    },
+    {
+      "entries": 100000,
+      "scenario": "first",
+      "median_ms": 0.14,
+      "p95_ms": 0.1678,
+      "samples": 30
+    },
+    {
+      "entries": 100000,
+      "scenario": "last",
+      "median_ms": 13.7265,
+      "p95_ms": 14.1652,
+      "samples": 30
+    },
+    {
+      "entries": 100000,
+      "scenario": "miss",
+      "median_ms": 7.1665,
+      "p95_ms": 7.2808,
+      "samples": 30
+    },
+    {
+      "entries": 100000,
+      "scenario": "repeated",
+      "median_ms": 0.0839,
+      "p95_ms": 0.098,
+      "samples": 30
+    },
+    {
+      "entries": 100000,
+      "scenario": "refresh",
+      "median_ms": 40.6392,
+      "p95_ms": 41.9831,
+      "samples": 5
+    }
+  ]
+}

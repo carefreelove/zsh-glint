@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">zsh-glint</title><desc id="desc">A terminal prompt pointing toward a mint-colored glint.</desc>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="#101a29" stroke="#293950" stroke-width="2"/>
+  <path d="m29 46 21 18-21 18" fill="none" stroke="#dce8f5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M77 36c0 17-6 27-22 28 16 2 22 11 22 28 1-17 7-26 23-28-16-1-22-11-23-28Z" fill="#8be9dd"/>
+  <circle cx="100" cy="34" r="4" fill="#edce8b"/>
+</svg>
