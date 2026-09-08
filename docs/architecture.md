@@ -6,7 +6,7 @@
 2. 若允许初始化且 `_comps` 尚不存在，调用标准 `compinit`。已有补全配置保持原样。
 3. `precmd` hook 从 Zsh 的 `history` 参数提取最近历史，过滤空白开头及控制字符条目，构建内存数组。
 4. `line-pre-redraw` hook 先清理自己的显示，再检查光标位置、编辑上下文、按键队列及开关。
-5. 使用字面前缀匹配，选取最近的较长候选，将后缀写入 `POSTDISPLAY`，用带有 `memo=terminal-completion` 的 `region_highlight` 条目着色。
+5. 使用字面前缀匹配，选取最近的较长候选，将后缀写入 `POSTDISPLAY`，用带有 `memo=zsh-glint` 的 `region_highlight` 条目着色。
 6. `forward-char` / `vi-forward-char` wrapper 在行尾且当前 buffer 与建议来源一致时接受建议；否则调用加载前保存的 widget。
 7. `line-finish` 清理建议。Enter 仍由 Zsh 自己处理，插件不会执行候选命令。
 
@@ -25,6 +25,8 @@ Tab 的路径和参数补全全部由 Zsh completion system 提供；本项目�
 `scripts/config.zsh` 为安装和卸载共用的区块编辑器。它定位目标配置文件并解析符号链接，只编辑完整且唯一的托管区块。异常标记导致立即退出。
 
 新内容写入同目录临时文件；无变化时不创建备份。已有文件发生变化时保留原文件权限并创建备份，最终以 rename 替换目标。不会删除项目目录或用户历史。为避免并发编辑覆盖，运行安装器时不要同时保存目标配置。
+
+项目更名为 `zsh-glint` 后，安装器同时识别旧的 `terminal-completion` 区块，并在重新安装时迁移到新名称。混合首尾标记或同时出现多个新旧区块会被拒绝。旧入口文件转发到 `zsh-glint.plugin.zsh`，旧命令和 widgets 委托给同一实现，`TC_*` 配置及加载保护保持兼容。
 
 ## 验证方式
 

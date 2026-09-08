@@ -16,8 +16,11 @@ while (( $# )); do
   esac
 done
 typeset project_dir=${${(%):-%x}:A:h:h}
-typeset begin='# >>> terminal-completion >>>'
-typeset end='# <<< terminal-completion <<<'
+typeset begin='# >>> zsh-glint >>>'
+typeset end='# <<< zsh-glint <<<'
+typeset legacy_begin='# >>> terminal-completion >>>'
+typeset legacy_end='# <<< terminal-completion <<<'
+typeset expected_end=''
 typeset line tmp_file='' backup=''
 typeset -a kept=()
 integer inside=0 blocks=0
@@ -25,11 +28,12 @@ rc_path=${rc_path:A}
 [[ ! -d $rc_path ]] || { print -u2 -- "Not a file: $rc_path"; exit 1; }
 if [[ -e $rc_path ]]; then
   while IFS= read -r line || [[ -n $line ]]; do
-    if [[ $line == "$begin" ]]; then
+    if [[ $line == "$begin" || $line == "$legacy_begin" ]]; then
       (( inside == 0 && blocks == 0 )) || { print -u2 -- 'Invalid or duplicate managed block; file unchanged.'; exit 1; }
       inside=1; blocks=1
-    elif [[ $line == "$end" ]]; then
-      (( inside == 1 )) || { print -u2 -- 'Invalid managed block; file unchanged.'; exit 1; }
+      if [[ $line == "$begin" ]]; then expected_end=$end; else expected_end=$legacy_end; fi
+    elif [[ $line == "$end" || $line == "$legacy_end" ]]; then
+      [[ $inside == 1 && $line == "$expected_end" ]] || { print -u2 -- 'Invalid managed block; file unchanged.'; exit 1; }
       inside=0
     elif (( ! inside )); then
       kept+=( "$line" )
@@ -42,8 +46,8 @@ if [[ $action == uninstall && $blocks == 0 ]]; then
   exit 0
 fi
 if [[ $action == install ]]; then
-  [[ -r $project_dir/terminal-completion.plugin.zsh ]] || exit 1
-  kept+=( "$begin" "source ${(q)project_dir}/terminal-completion.plugin.zsh" "$end" )
+  [[ -r $project_dir/zsh-glint.plugin.zsh ]] || exit 1
+  kept+=( "$begin" "source ${(q)project_dir}/zsh-glint.plugin.zsh" "$end" )
 fi
 command mkdir -p -- "${rc_path:h}"
 tmp_file=$(command mktemp "${rc_path}.tmp.XXXXXXXX")
@@ -67,5 +71,5 @@ print -- "$action complete: $rc_path"
 if [[ $action == install ]]; then
   print -- 'Open a new Zsh session to activate. Keep this project directory in place.'
 else
-  print -- 'Open a new Zsh session, or run: terminal-completion unload'
+  print -- 'Open a new Zsh session, or run: zsh-glint unload'
 fi

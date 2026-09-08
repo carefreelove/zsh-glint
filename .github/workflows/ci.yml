@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           zsh --version
-          for script in terminal-completion.plugin.zsh scripts/*.zsh; do
+          for script in *.plugin.zsh scripts/*.zsh; do
             zsh -n "$script"
           done
       - name: Audit system completion directories

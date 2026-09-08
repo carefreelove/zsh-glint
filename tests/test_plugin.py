@@ -10,7 +10,7 @@ import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-PLUGIN = ROOT / "terminal-completion.plugin.zsh"
+PLUGIN = ROOT / "zsh-glint.plugin.zsh"
 
 
 def run_zsh(code):
@@ -74,19 +74,19 @@ fc -P
     def test_hook_and_widget_lifecycle(self):
         self.check_zsh(r'''
 local_original=${widgets[forward-char]}
-source ./terminal-completion.plugin.zsh
+source ./zsh-glint.plugin.zsh
 [[ ${widgets[forward-char]} == "$local_original" ]] || exit 1
-terminal-completion off
+zsh-glint off
 [[ $TC_ENABLED == 0 ]] || exit 2
-terminal-completion toggle
+zsh-glint toggle
 [[ $TC_ENABLED == 1 ]] || exit 3
-terminal-completion unload
+zsh-glint unload
 [[ ${widgets[forward-char]} == builtin && ! -v _TC_LOADED ]] || exit 4
-source ./terminal-completion.plugin.zsh
+source ./zsh-glint.plugin.zsh
 [[ ${widgets[forward-char]} == user:_tc_forward_char ]] || exit 5
 later_widget() { :; }
 zle -N forward-char later_widget
-terminal-completion unload
+zsh-glint unload
 [[ ${widgets[forward-char]} == user:later_widget ]] || exit 6
 ''')
 
@@ -96,6 +96,29 @@ terminal-completion unload
             capture_output=True, text=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_legacy_entry_point_command_and_widgets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                ["zsh", "-dfi", "-c", r'''
+source ./terminal-completion.plugin.zsh
+[[ $(terminal-completion status) == 'zsh-glint '* ]] || exit 1
+terminal-completion off
+[[ $TC_ENABLED == 0 ]] || exit 2
+zsh-glint on
+[[ $TC_ENABLED == 1 ]] || exit 3
+[[ ${widgets[terminal-completion-accept]} == ${widgets[zsh-glint-accept]} ]] || exit 4
+[[ ${widgets[terminal-completion-toggle]} == ${widgets[zsh-glint-toggle]} ]] || exit 5
+saved=${widgets[_tc_saved_forward_char]}
+source ./zsh-glint.plugin.zsh
+[[ ${widgets[_tc_saved_forward_char]} == "$saved" ]] || exit 6
+terminal-completion unload
+[[ ${widgets[forward-char]} == builtin ]] || exit 7
+'''], cwd=ROOT, text=True, capture_output=True, timeout=15,
+                env=dict(os.environ, ZDOTDIR=directory, TC_INIT_COMPLETION="0"),
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(result.stderr, "")
 
 
 class Terminal:
@@ -222,15 +245,15 @@ class InteractiveTests(unittest.TestCase):
 
     def test_disable_and_unload_restore_arrow(self):
         t = self.terminal
-        t.command("print -s -- 'git status'; terminal-completion off")
+        t.command("print -s -- 'git status'; zsh-glint off")
         t.type("git st")
         self.assertEqual(t.snapshot()[2], "")
         t.type(b"\x15")
-        t.command("terminal-completion on")
+        t.command("zsh-glint on")
         t.type("git st")
         self.assertEqual(t.snapshot()[2], "atus")
         t.type(b"\x15")
-        t.command("terminal-completion unload")
+        t.command("zsh-glint unload")
         t.type("git st")
         t.type(b"\x1b[C")
         self.assertEqual(t.snapshot()[:2], ["git st", "6"])
@@ -296,15 +319,39 @@ class InstallerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             rc = Path(directory) / ".zshrc"
             for content in (
-                "# >>> terminal-completion >>>\nkeep\n",
-                "# <<< terminal-completion <<<\n",
-                "# >>> terminal-completion >>>\n# >>> terminal-completion >>>\n",
+                "# >>> zsh-glint >>>\nkeep\n",
+                "# <<< zsh-glint <<<\n",
+                "# >>> zsh-glint >>>\n# >>> zsh-glint >>>\n",
+                "# >>> terminal-completion >>>\n# <<< zsh-glint <<<\n",
+                "# >>> zsh-glint >>>\n# <<< terminal-completion <<<\n",
+                "# >>> terminal-completion >>>\n# <<< terminal-completion <<<\n# >>> zsh-glint >>>\n# <<< zsh-glint <<<\n",
             ):
                 rc.write_text(content)
                 result = self.run_script("install", rc)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(rc.read_text(), content)
             self.assertFalse(list(Path(directory).glob("*.backup.*")))
+
+    def test_legacy_installation_migration_and_uninstall(self):
+        with tempfile.TemporaryDirectory() as directory:
+            rc = Path(directory) / ".zshrc"
+            original = (
+                "# existing config\n# >>> terminal-completion >>>\n"
+                "source /old/path/terminal-completion.plugin.zsh\n"
+                "# <<< terminal-completion <<<\n# trailing config\n"
+            )
+            rc.write_text(original)
+            result = self.run_script("install", rc)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn("terminal-completion", rc.read_text())
+            self.assertEqual(rc.read_text().count("# >>> zsh-glint >>>"), 1)
+            self.assertIn("zsh-glint.plugin.zsh", rc.read_text())
+            self.assertTrue(rc.read_text().startswith("# existing config\n# trailing config\n"))
+            self.assertEqual(self.run_script("uninstall", rc).returncode, 0)
+            self.assertEqual(rc.read_text(), "# existing config\n# trailing config\n")
+            rc.write_text(original)
+            self.assertEqual(self.run_script("uninstall", rc).returncode, 0)
+            self.assertEqual(rc.read_text(), "# existing config\n# trailing config\n")
 
     def test_symlink_and_new_file(self):
         with tempfile.TemporaryDirectory() as directory:
