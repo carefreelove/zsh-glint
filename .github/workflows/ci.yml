@@ -26,5 +26,11 @@ jobs:
           for script in terminal-completion.plugin.zsh scripts/*.zsh; do
             zsh -n "$script"
           done
+      - name: Audit system completion directories
+        shell: zsh -df {0}
+        run: |
+          fpath=( "${(@M)fpath:#/usr/share/zsh/*}" )
+          autoload -Uz compaudit
+          compaudit
       - name: Run unit and terminal integration tests
         run: python3 -m unittest discover -s tests -v

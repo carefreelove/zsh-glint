@@ -123,9 +123,13 @@ class Terminal:
             f"> {shlex.quote(str(self.snapshot_path))}; }}; "
             "zle -N _test_snapshot; bindkey -M emacs '^X^B' _test_snapshot; bindkey -M viins '^X^B' _test_snapshot\n"
         )
-        output = self.read_until(b"TC> ")
-        if b"command not found" in output or b"requires Zsh" in output:
-            raise AssertionError(output)
+        try:
+            output = self.read_until(b"TC> ")
+            if b"command not found" in output or b"requires Zsh" in output:
+                raise AssertionError(output)
+        except BaseException:
+            self.close()
+            raise
 
     def send(self, text):
         os.write(self.master, text.encode() if isinstance(text, str) else text)
@@ -182,6 +186,7 @@ class Terminal:
 class InteractiveTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="tc-test-")
+        self.addCleanup(self.temp.cleanup)
         self.terminal = Terminal(self.temp.name)
 
     def tearDown(self):
